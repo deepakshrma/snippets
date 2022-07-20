@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "homepage": "https://deepakshrma.github.io/snippets",
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist",
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview"
@@ -22,6 +25,7 @@
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "@vitejs/plugin-react": "^2.0.0",
+    "gh-pages": "^4.0.0",
     "vite": "^3.0.0"
   }
 }
