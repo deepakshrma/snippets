@@ -1,0 +1,10 @@
+.ant-card-meta {
+  padding: 10px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+.ant-card-meta-title {
+}
