@@ -5,10 +5,11 @@
   "type": "module",
   "homepage": "https://deepakshrma.github.io/snippets",
   "scripts": {
-    "predeploy": "npm run build",
+    "predeploy": "npm run build:prod",
     "deploy": "gh-pages -d dist",
     "start": "vite",
     "build": "vite build",
+    "build:prod": "vite --config vite.config.prod.js build",
     "preview": "vite preview"
   },
   "dependencies": {

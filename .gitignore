@@ -126,3 +126,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+build
