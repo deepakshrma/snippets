@@ -1,7 +1,9 @@
 let browserCache;
-if ("caches" in window) {
-  browserCache = await caches.open("code-snippets");
-}
+(async function () {
+  if ("caches" in window) {
+    browserCache = await caches.open("code-snippets");
+  }
+})();
 export const fetchSnipets = async (url, { types = [] } = {}) => {
   if (browserCache) {
     const response = await browserCache.match(url);
