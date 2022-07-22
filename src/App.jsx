@@ -1,20 +1,19 @@
 import { CopyOutlined, ReloadOutlined, SmileFilled, SwapLeftOutlined, SwapRightOutlined } from "@ant-design/icons";
 import { Button, Card, notification, Switch, Tooltip, Typography } from "antd";
+import html2canvas from "html2canvas";
 import { shuffle, upperCase } from "lodash";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { CopyToClipboard } from "react-copy-to-clipboard";
-import { Light as SyntaxHighlighter } from "react-syntax-highlighter";
-import typescript from "react-syntax-highlighter/dist/esm/languages/hljs/typescript";
-import theme from "react-syntax-highlighter/dist/esm/styles/hljs/darcula";
+import SyntaxHighlighter from "react-syntax-highlighter";
+import { atomOneDarkReasonable as theme } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { Pagination } from "swiper";
 import "swiper/css";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "./App.css";
+import { fetchSnipets } from "./services/code";
 import { useTheme } from "./theme/ThemeProvider";
 
 const { Title } = Typography;
-
-SyntaxHighlighter.registerLanguage("typescript", typescript);
 
 const { Meta } = Card;
 const openNotification = ({ placement = "bottom", description = "Code has been copied to clipboard" }) => {
@@ -37,8 +36,11 @@ function App() {
   const [snippets, setSnippets] = useState({});
   const [top10, setTop10] = useState([]);
   const [page, setPage] = useState({ page: 0, limit: 10 });
+  const codeBlock = useRef();
   useEffect(() => {
-    fetch("https://raw.githubusercontent.com/deepakshrma/30-seconds-of-typescript/master/snippets/typescript.json")
+    fetchSnipets(
+      "https://raw.githubusercontent.com/deepakshrma/30-seconds-of-typescript/master/snippets/typescript.json"
+    )
       .then((r) => r.json())
       .then((m) => {
         const snippets = Object.values(m).map((snip) => {
@@ -48,12 +50,14 @@ function App() {
           const description = body.split("*")[3];
           // const description = body.split("*")[3];
           const codeIndex = body.indexOf("export ");
+          const comment = body.slice(0, codeIndex);
           const code = body.slice(codeIndex);
           return {
             ...snip,
             language: "typescript",
             body,
             code,
+            comment,
             description,
             name,
             prefix,
@@ -75,7 +79,26 @@ function App() {
       setPage({ ...page, page: 0 });
     }
   };
-  console.log(top10, page.page * page.limit, (page.page + 1) * page.limit);
+
+  const onCopyImage = () => {
+    html2canvas(codeBlock.current).then((canvas) => {
+      canvas.toBlob((blob) => {
+        (async function () {
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({
+                [blob.type]: blob,
+              }),
+            ]);
+            openNotification();
+          } catch (error) {
+            console.error(error);
+          }
+        })();
+      });
+    });
+  };
+  console.log(window.location.pathname);
   return (
     <div style={{ display: "flex", flexDirection: "column" }}>
       <br />
@@ -102,34 +125,42 @@ function App() {
         modules={[Pagination]}
         className="mySwiper"
       >
-        {top10.map(({ prefix, name, description, body, code, language }, i) => {
+        {top10.map(({ prefix, name, description, body, code, comment, language }, i) => {
           return (
-            <SwiperSlide key={`snippet__${prefix}`}>
+            <SwiperSlide key={`snippet__${prefix}`} ref={codeBlock}>
               <Card
-                style={{ width: window.innerHeight * 0.8 }}
-                // cover={<img alt="example" src="https://gw.alipayobjects.com/zos/rmsportal/JiqGstEfoWAOHiTxclqi.png" />}
+                style={{
+                  width: window.innerHeight * 0.8,
+                  boxShadow: `rgba(149, 157, 165, 0.2) 0px 8px 24px`,
+                }}
                 actions={[
-                  <CopyToClipboard text={code} onCopy={() => openNotification("top")} key="copy to clipboard">
-                    <Tooltip title="copy code">
+                  <Tooltip title="copy code Image to Clipboard">
+                    <Button type="primary" icon={<CopyOutlined />} onClick={onCopyImage}>
+                      Code Image
+                    </Button>
+                  </Tooltip>,
+                  <CopyToClipboard text={code} onCopy={() => openNotification()} key="copy code to clipboard">
+                    <Tooltip title="copy code to clipboard">
                       <Button type="primary" icon={<CopyOutlined />}>
-                        Copy Code
+                        Code
                       </Button>
                     </Tooltip>
                   </CopyToClipboard>,
-                  <CopyToClipboard text={body} onCopy={() => openNotification("top")} key="copy with comment">
-                    <Tooltip title="copy with comment">
+                  <CopyToClipboard text={body} onCopy={() => openNotification()} key="copy with comment to clipboard">
+                    <Tooltip title="copy with comment to clipboard">
                       <Button type="primary" icon={<CopyOutlined />}>
-                        Copy with comment
+                        With Comment
                       </Button>
                     </Tooltip>
                   </CopyToClipboard>,
-                  // <EditOutlined key="edit" />,
-                  // <EllipsisOutlined key="ellipsis" />,
                 ]}
               >
                 <Meta avatar={`[${language}]`} title={`${i + 1}. ${name}(${prefix})`} description={description} />
-                <SyntaxHighlighter language="typescript" style={theme} wrapLines wrapLongLines>
-                  {body}
+                <SyntaxHighlighter language={language} style={theme} wrapLines wrapLongLines>
+                  {comment}
+                </SyntaxHighlighter>
+                <SyntaxHighlighter language={language} style={theme} wrapLines wrapLongLines>
+                  {code}
                 </SyntaxHighlighter>
               </Card>
             </SwiperSlide>
