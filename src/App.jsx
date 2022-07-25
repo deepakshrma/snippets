@@ -8,10 +8,11 @@ import {
   SwapLeftOutlined,
   SwapRightOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Layout, notification, Space, Spin, Switch, Tag, Tooltip, Typography } from "antd";
+import { Button, Card, notification, Space, Spin, Switch, Tag, Tooltip, Typography } from "antd";
 import html2canvas from "html2canvas";
 import { shuffle, upperCase } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
+import AdSense from "react-adsense";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { atomOneDarkReasonable as theme } from "react-syntax-highlighter/dist/esm/styles/hljs";
@@ -24,7 +25,6 @@ import { fetchSnipets } from "./services/code";
 import { useTheme } from "./theme/ThemeProvider";
 
 const { Title } = Typography;
-const { Content } = Layout;
 
 const { Meta } = Card;
 const openNotification = ({ placement = "bottom", description = "Code has been copied to clipboard" } = {}) => {
@@ -49,6 +49,7 @@ function App() {
   const [selected, setSelected] = useState();
   const [page, setPage] = useState({ page: 0, limit: 10 });
   const [controlledSwiper, setControlledSwiper] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
 
   const codeBlock = useRef();
 
@@ -201,41 +202,61 @@ function App() {
           EffectCards,
           Controller,
         ]}
-        onSwiper={setControlledSwiper}
+        onSwiper={(e) => setControlledSwiper(e)}
         onSlideChange={({ activeIndex }) => {
           const { language, id } = top10[activeIndex] || {};
-          window.history.replaceState(null, null, `?language=${language}&id=${id}`);
+          if (language && id) window.history.replaceState(null, null, `?language=${language}&id=${id}`);
+          setActiveIndex(activeIndex);
         }}
       >
         {top10.map((snip, i) => {
           return (
             <SwiperSlide key={`snippet__${snip.id}`} ref={codeBlock}>
+              {activeIndex}
               <CodeCard data={snip} index={i} />
             </SwiperSlide>
           );
         })}
+        <SwiperSlide key={`snippet__ad_sense`}>
+          <BlankCard>
+            <Meta title="Google Ad" />
+            {activeIndex === top10.length && (
+              <AdSense.Google
+                client="ca-pub-7756182462259588"
+                slot="4169179252"
+                style={{ width: 300, height: 500, float: "left" }}
+                format="auto"
+                responsive="true"
+              />
+            )}
+          </BlankCard>
+        </SwiperSlide>
         <SwiperSlide key={`snippet__reload`}>
-          <div
-            style={{
-              alignItems: "center",
-              display: "flex",
-              flexDirection: "column",
-              background: "#333",
-              width: 400,
-              height: 400,
-              padding: 10,
-            }}
-            onClick={onRelaod}
-          >
+          <BlankCard onClick={onRelaod}>
             <Title level={5}>Tap to Reload</Title>
             <Space direction="vertical" align="center">
               <ReloadOutlined style={{ fontSize: "40px", color: "#08c" }} />
             </Space>
-          </div>
+          </BlankCard>
         </SwiperSlide>
       </Swiper>
     </div>
   );
+  function BlankCard({ children, onClick = () => {} }) {
+    return (
+      <Card
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+        onClick={onClick}
+      >
+        <div style={{ minWidth: 200, minHeight: 500, display: "flex", flexDirection: "column", alignItems: "center" }}>
+          {children}
+        </div>
+      </Card>
+    );
+  }
 
   function CodeCard({ data, index = -1 }) {
     const { code, body, name, prefix, language, description, comment, id } = data;
