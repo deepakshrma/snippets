@@ -14,6 +14,7 @@ import { shuffle, upperCase } from "lodash";
 import React, { useEffect, useRef, useState } from "react";
 import AdSense from "react-adsense";
 import { CopyToClipboard } from "react-copy-to-clipboard";
+import ReactGA from "react-ga";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import { atomOneDarkReasonable as theme } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { Controller, EffectCards } from "swiper";
@@ -23,7 +24,6 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "./App.css";
 import { fetchSnipets } from "./services/code";
 import { useTheme } from "./theme/ThemeProvider";
-
 const { Title } = Typography;
 
 const { Meta } = Card;
@@ -81,9 +81,10 @@ function App() {
             prefix,
           };
         });
-
-        setSnippets(shuffle(snippets));
-      });
+        return snippets;
+      })
+      .then((snippets) => setSnippets(shuffle(snippets)));
+    ReactGA.initialize("UA-172955705-1");
   }, []);
   const pageCount = Math.ceil(snippets.length / page.limit);
 
@@ -110,6 +111,10 @@ function App() {
       setSelected(snip);
     }
   }, [snippets, window.location]);
+  useEffect(() => {
+    console.log(window.location.pathname + window.location.search);
+    ReactGA.pageview(window.location.pathname + window.location.search);
+  }, [activeIndex]);
 
   const onRelaod = () => {
     if (page.page < pageCount - 1) {
